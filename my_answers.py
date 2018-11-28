@@ -1,9 +1,11 @@
 #  Student: Eric Olsen
-#  My verbose commments below are my primary way of teaching myself as I walk through this code
+#  There are many self-apparent notes below, these mostly are in place to assist me
+#  in future projects when I need to review previous work. These would likely be
+#  pretty self-apparent facts to a professional developer.
 
 import numpy as np
 
-#primary constructor
+# these class fields are all defined at the bottom of the program
 class NeuralNetwork(object):
     def __init__(self, input_nodes, hidden_nodes, output_nodes, learning_rate):
         # Set number of nodes in input, hidden and output layers.
@@ -12,16 +14,17 @@ class NeuralNetwork(object):
         self.output_nodes = output_nodes
 
         # Initialize weights
-        # We 'randomly' set these to 1/square-root of the total so it's closer to zero
-        # I think we do this to assist with some of the bias that the sigmoid algorithm brings
+        # We randomly set these to 1/square-root of the total so it's closer to zero
+        # Introducing a bias to lower numbers assists because we're using sigmoid activation functions
         self.weights_input_to_hidden = np.random.normal(0.0, self.input_nodes**-0.5, 
                                        (self.input_nodes, self.hidden_nodes))
 
         self.weights_hidden_to_output = np.random.normal(0.0, self.hidden_nodes**-0.5, 
                                        (self.hidden_nodes, self.output_nodes))
-        self.lr = learning_rate
         
-        self.activation_function = lambda x : 1 / (1 + np.exp(-x))
+        self.lr = learning_rate# parameter from the bottom
+        
+        self.activation_function = lambda x : 1 / (1 + np.exp(-x)) # sigmoid activation function
         
 
     def train(self, features, targets):
@@ -31,18 +34,29 @@ class NeuralNetwork(object):
             ---------
             
             features: 2D array, each row is one data record, each column is a feature
+                      - After one-hot encoding is complete, this is 59 colums per entry
+                      - Many equate to time, but there are 4 other significant and normalized factors:
+                          - casual vs. registered (which sums to cnt)
+                          - temperature
+                          - humidity
+                          - windspeed
             targets: 1D array of target values
+                      - We are measuring as targest the cnt which sum from the registered and 
+                      casualusers
         
         '''
-        n_records = features.shape[0]
+        n_records = features.shape[0] #13,347 records for this particular data set
         delta_weights_i_h = np.zeros(self.weights_input_to_hidden.shape)
         delta_weights_h_o = np.zeros(self.weights_hidden_to_output.shape)
         for X, y in zip(features, targets):
             
-            final_outputs, hidden_outputs = self.forward_pass_train(X)  # Implement the forward pass function below
+            final_outputs, hidden_outputs = self.forward_pass_train(X)  # forward pass defined below
             # Implement the backproagation function below
-            delta_weights_i_h, delta_weights_h_o = self.backpropagation(final_outputs, hidden_outputs, X, y, 
-                                                                        delta_weights_i_h, delta_weights_h_o)
+            delta_weights_i_h, delta_weights_h_o = self.backpropagation(final_outputs, hidden_outputs, 
+                                                                        X, y, 
+                                                                        delta_weights_i_h, 
+                                                                        delta_weights_h_o)
+        # defined below    
         self.update_weights(delta_weights_i_h, delta_weights_h_o, n_records)
 
 
@@ -55,19 +69,21 @@ class NeuralNetwork(object):
 
         '''
         #### Implement the forward pass here ####
-        # This should just be 1) a dot product of weights and inputs, 2) the activation function on the resulting vectors
+        # This should just be 
+            #1) a dot product of weights and inputs, 
+            #2) the activation function on the resulting vectors
         ### Forward pass ###
         # TODO: Hidden layer - Replace these values with your calculations.
         hidden_inputs = np.dot(X, self.weights_input_to_hidden) # 1
-        hidden_outputs = self.activation_function(hidden_inputs) # 2, this is using the lambda function above
+        hidden_outputs = self.activation_function(hidden_inputs) # 2
 
         # TODO: Output layer - Replace these values with your calculations.
-        # In the forward pass, the hidden to final node will follow the same process above with different inputs
         final_inputs = np.dot(hidden_outputs, self.weights_hidden_to_output)
         
-        # I think I was tripping myself up here by doing a second sigmoid
-        # If I just assign the final outputs from the final inputs, this is my answer
-        # this will have some implications on my backpropogation below which I'll need to revise
+        # Lesson Learned:
+        # I think I was tripping myself up here by doing a second sigmoid (as the courses did)
+        # If I just assign the final outputs from the final inputs, this is my answer.
+        # This became a significant issue with my back propogations.
         final_outputs = final_inputs
         
         return final_outputs, hidden_outputs
@@ -83,21 +99,24 @@ class NeuralNetwork(object):
             delta_weights_h_o: change in weights from hidden to output layers
 
         '''
-        # I gutted most of the previous comments because it was messing with my ability to debug
+        # This becamse pretty cluttered with comments. There are few comments below so the equations 
+        # have emphasis
 
         error = y - final_outputs
         
-        # Eeek, lesson learned here, order DOES matter when using the dot product in this manner
+        # Lesson learned: Order DOES matter in numpy when using the dot product in this manner
         hidden_error = np.dot(self.weights_hidden_to_output, error)
         
-        # since I removed the second activation function, this should just be an assignment operation 
+        # Since there is no second activation function, this is just an assignment operation 
         output_error_term = error
         
-        # this should be y - y_hat * f'(W a)
+        # y - y_hat * f'(W a)
         hidden_error_term = hidden_error * hidden_outputs * (1 - hidden_outputs)
         
+        # ensure that we multiply by a column-based and not row-based vector
         delta_weights_i_h += hidden_error_term * X[:,None]
         
+        # again, ensure we multiply a column and not a row-based vector
         delta_weights_h_o += output_error_term * hidden_outputs[:,None]
         
         return delta_weights_i_h, delta_weights_h_o
@@ -114,15 +133,13 @@ class NeuralNetwork(object):
             n_records: number of records
 
         '''
-        # I assume we're updating the weights using the learnrate and average
-        # update hidden-to-output weights with gradient descent step
+        # use the average for weigh updates calculated by a division of the number of records
         self.weights_hidden_to_output += self.lr * delta_weights_h_o / n_records 
         self.weights_input_to_hidden += self.lr * delta_weights_i_h / n_records
 
     
-    # I could be off, but it looks like we've implemented most of this in the train method
-    # This may need to be partially duplicated code in order to run a high-level check on 
-    # the error rate so we can periodically check of we're overfitting our parameters
+    # I belive this function mostly serves to print output from the calling program.
+    # Under the hood the .train function is also implementing these function calls.
     def run(self, features):
         ''' Run a forward pass through the network with input features 
         
@@ -138,7 +155,7 @@ class NeuralNetwork(object):
         
         # TODO: Output layer - Replace these values with the appropriate calculations.
         final_inputs = np.dot(hidden_outputs, self.weights_hidden_to_output) # signals into final output layer
-#         final_outputs = self.activation_function(final_inputs) # signals from final output layer 
+        #final_outputs = self.activation_function(final_inputs) # signals from final output layer 
         final_outputs = final_inputs
     
         return final_outputs
@@ -147,7 +164,8 @@ class NeuralNetwork(object):
 #########################################################
 # Set your hyperparameters here
 ##########################################################
-iterations = 100
-learning_rate = 0.1
-hidden_nodes = 2
+iterations = 3500 
+learning_rate = 0.5
+
+hidden_nodes = 25
 output_nodes = 1

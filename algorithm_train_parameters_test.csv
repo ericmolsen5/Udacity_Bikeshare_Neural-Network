@@ -1,0 +1,16 @@
+test,iterations,learning_rate,hidden_nodes,train_loss,validation_loss,delta,Notes
+1,1000,0.1,75,0.293,0.604,0.311,-
+2,1000,0.1,50,0.301,0.596,0.295,-
+3,2000,0.1,50,0.295,0.571,0.276,"2,000 seems to be the optimal iteration"
+4,1500,0.1,50,0.309,0.625,0.316,-
+5,2000,0.1,75,0.334,0.592,0.258,-
+6,2000,0.1,100,0.277,0.562,0.285,This definitely over-fit the data
+7,2000,0.05,50,0.296,0.636,0.34,-
+8,2000,0.1,25,0.278,0.585,0.307,-
+9,2000,0.1,62,0.282,0.578,0.296,final parameter settings
+10,3500,0.05,25,0.076,0.161,0.085, tweak of test data
+11,5000,0.5,35,0.19,0.346,0.156,20 nodes seems best
+12,5000,0.75,20,0.062,0.13,0.068,"Model over-estimates, slightly under is better"
+13,7000,0.75,20,0.58,0.122,-0.458,Assuming this is an overfit
+14,5000,0.6,20,0.57,0.136,-0.434,Still over-fitting
+15,5000,0.5,20,0.059,0.164,0.105,"pretty good, but initial tweak seems best"
